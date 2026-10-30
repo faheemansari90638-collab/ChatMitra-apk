@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public profile of a registered user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's public display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address"
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Avatar image URL or emoji representation"
+        },
+        "about": {
+          "type": "string",
+          "description": "Short bio or status quote"
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Active real-time presence indicator"
+        },
+        "lastSeen": {
+          "type": "string",
+          "description": "Last seen timestamp string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile last updated timestamp"
+        }
+      },
+      "required": ["userId", "displayName"]
+    },
+    "ChatConversation": {
+      "title": "ChatConversation",
+      "description": "A conversation between two users or a group",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique conversation ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Chat or contact display name"
+        },
+        "isGroup": {
+          "type": "boolean",
+          "description": "Whether this chat is a multi-user group"
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "List of user IDs participating in this chat"
+        },
+        "lastMessageText": {
+          "type": "string",
+          "description": "Snippet of the most recent message"
+        },
+        "lastMessageTimestamp": {
+          "type": "integer",
+          "description": "Epoch timestamp of the last message in milliseconds"
+        },
+        "lastSenderId": {
+          "type": "string",
+          "description": "User ID of the last sender"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Conversation creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Conversation last updated timestamp"
+        }
+      },
+      "required": ["id", "participantIds"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single text or media message sent in a conversation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique message ID"
+        },
+        "chatId": {
+          "type": "string",
+          "description": "Parent conversation ID"
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Author UID"
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Author display name"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text body of the message"
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Message epoch timestamp in milliseconds"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["TEXT", "IMAGE", "VOICE_NOTE", "DOCUMENT", "POLL"],
+          "description": "Message type"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "SENT", "DELIVERED", "READ"],
+          "description": "Delivery status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "chatId", "senderId", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Public user profiles"
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatConversation" },
+      "description": "Direct and group conversations"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Real-time messages belonging to a conversation"
+    }
+  }
+}

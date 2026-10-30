@@ -1,0 +1,6 @@
+{
+  "name": "ChatMitra",
+  "description": "Modern, secure instant messaging and calling app with chats, status, media sharing, and group communities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
