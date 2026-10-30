@@ -455,4 +455,29 @@ class ExampleRobolectricTest {
     assertEquals("Offline queued content", sentMessageText)
     assertTrue("Queue should be empty after flush", NetworkReliabilityManager.queuedMessages.value.isEmpty())
   }
+
+  @Test
+  fun `hamza ai assistant pipeline and message history verification`() {
+    val aiRepo = com.example.data.repository.HamzaAiRepository
+    aiRepo.clearChatHistory()
+
+    val initialMsgs = aiRepo.messages.value
+    assertTrue("Initial messages should not be empty", initialMsgs.isNotEmpty())
+    assertFalse("Initial message should be from assistant", initialMsgs.first().isFromUser)
+    assertTrue("Suggested prompt chips should be available", aiRepo.suggestedPromptChips.isNotEmpty())
+
+    // Send a message to Hamza AI assistant
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    aiRepo.sendMessage("Hello Hamza AI!", context)
+    val currentMsgs = aiRepo.messages.value
+    assertTrue("Messages should now contain user message", currentMsgs.any { it.text == "Hello Hamza AI!" && it.isFromUser })
+
+    // Cancel in-flight generation
+    aiRepo.cancelGeneration()
+    assertFalse("Generation state should be false after cancel", aiRepo.isGenerating.value)
+
+    // Clear chat history
+    aiRepo.clearChatHistory()
+    assertEquals("History should reset back to initial greeting", 1, aiRepo.messages.value.size)
+  }
 }

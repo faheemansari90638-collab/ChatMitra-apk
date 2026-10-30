@@ -82,17 +82,8 @@ fun HamzaAiScreen(
   val messages by HamzaAiRepository.messages.collectAsState()
   val isGenerating by HamzaAiRepository.isGenerating.collectAsState()
 
-  var inputText by remember { mutableStateOf("") }
   var showClearConfirmDialog by remember { mutableStateOf(false) }
   var showPrivacyInfoDialog by remember { mutableStateOf(false) }
-
-  val listState = rememberLazyListState()
-
-  LaunchedEffect(messages.size) {
-    if (messages.isNotEmpty()) {
-      listState.animateScrollToItem(messages.size - 1)
-    }
-  }
 
   Scaffold(
     topBar = {
@@ -140,177 +131,25 @@ fun HamzaAiScreen(
       )
     }
   ) { paddingValues ->
-    Column(
+    ChatMitraAIContent(
+      messages = messages,
+      isGenerating = isGenerating,
+      onSendMessage = { prompt ->
+        HamzaAiRepository.sendMessage(prompt, context)
+      },
       modifier = Modifier
         .fillMaxSize()
         .padding(paddingValues)
-        .testTag("hamza_ai_screen")
-    ) {
-      // Privacy Guarantee Strip
-      Surface(
-        color = TealPrimary.copy(alpha = 0.08f),
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Icon(Icons.Default.Shield, contentDescription = null, tint = TealPrimary, modifier = Modifier.size(14.dp))
-          Spacer(modifier = Modifier.width(6.dp))
-          Text(
-            text = "Zero-leak guarantee: No chat messages are shared without your consent. Keys stay server-side.",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f)
-          )
-        }
+        .testTag("hamza_ai_screen"),
+      onCancelGeneration = {
+        HamzaAiRepository.cancelGeneration()
+      },
+      suggestedPrompts = HamzaAiRepository.suggestedPromptChips,
+      onPromptChipClick = { prompt ->
+        HamzaAiRepository.sendMessage(prompt, context)
       }
-
-      // Quick Prompt Suggestion Chips
-      LazyRow(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        items(HamzaAiRepository.suggestedPromptChips) { chipText ->
-          Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier
-              .clickable(enabled = !isGenerating) {
-                HamzaAiRepository.sendMessage(chipText, context)
-              }
-              .testTag("prompt_chip_${chipText.take(10)}")
-          ) {
-            Text(
-              text = chipText,
-              style = MaterialTheme.typography.labelSmall,
-              fontWeight = FontWeight.Medium,
-              color = TealPrimary,
-              modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-            )
-          }
-        }
-      }
-
-      // Messages List
-      LazyColumn(
-        state = listState,
-        modifier = Modifier
-          .weight(1f)
-          .fillMaxWidth()
-          .padding(horizontal = 12.dp)
-      ) {
-        items(messages, key = { it.id }) { msg ->
-          HamzaAiMessageBubble(
-            message = msg,
-            onCopy = {
-              val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-              val clip = ClipData.newPlainText("Hamza AI", msg.text)
-              clipboard.setPrimaryClip(clip)
-              Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-            }
-          )
-          Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        if (isGenerating) {
-          item {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.padding(8.dp)
-            ) {
-              CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
-                color = TealPrimary
-              )
-              Spacer(modifier = Modifier.width(10.dp))
-              Text(
-                text = "Hamza AI is thinking...",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-              )
-            }
-          }
-        }
-      }
-
-      // Generation Cancel Bar
-      AnimatedVisibility(visible = isGenerating) {
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-          horizontalArrangement = Arrangement.Center
-        ) {
-          TextButton(
-            onClick = { HamzaAiRepository.cancelGeneration() },
-            modifier = Modifier.testTag("ai_stop_generation_button")
-          ) {
-            Icon(Icons.Default.Stop, contentDescription = null, tint = AmberAccent, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("Stop Generating", color = AmberAccent, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-          }
-        }
-      }
-
-      // Message Input Composer
-      Surface(
-        tonalElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Row(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          OutlinedTextField(
-            value = inputText,
-            onValueChange = { inputText = it },
-            placeholder = { Text("Ask Hamza AI in English, Hindi, or Urdu...", fontSize = 13.sp) },
-            shape = RoundedCornerShape(24.dp),
-            modifier = Modifier
-              .weight(1f)
-              .testTag("ai_input_text_field"),
-            maxLines = 4,
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = TealPrimary,
-              unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-            )
-          )
-
-          Spacer(modifier = Modifier.width(8.dp))
-
-          IconButton(
-            onClick = {
-              if (inputText.isNotBlank() && !isGenerating) {
-                val query = inputText
-                inputText = ""
-                HamzaAiRepository.sendMessage(query, context)
-              }
-            },
-            enabled = inputText.isNotBlank() && !isGenerating,
-            modifier = Modifier
-              .size(46.dp)
-              .background(
-                if (inputText.isNotBlank() && !isGenerating) TealPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                CircleShape
-              )
-              .testTag("ai_send_button")
-          ) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Filled.Send,
-              contentDescription = "Send",
-              tint = if (inputText.isNotBlank() && !isGenerating) Color.White else Color.Gray,
-              modifier = Modifier.size(20.dp)
-            )
-          }
-        }
-      }
-    }
+    )
+  }
 
     // Clear History Dialog
     if (showClearConfirmDialog) {
@@ -378,7 +217,6 @@ fun HamzaAiScreen(
         }
       )
     }
-  }
 }
 
 @Composable
